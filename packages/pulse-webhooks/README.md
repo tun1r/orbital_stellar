@@ -123,6 +123,18 @@ Attaches a delivery driver to a `Watcher`. Every event the watcher emits is deli
 | `config.deliveryTimeoutMs`    | `number`             | `10_000` | Abort threshold for each HTTP attempt                                                 |
 | `config.allowPrivateNetworks` | `boolean`            | `false`  | If true, bypass SSRF checks for local/private IP ranges                               |
 
+### `new RedisRetryQueue(client, options?)`
+
+Provides a Redis-backed `RetryQueue` adapter without bundling a Redis client. Pass any client that implements the small `RedisLike` sorted-set surface: `zadd`, `zrangebyscore`, `zrevrange`, `zrem`, and `zcard`.
+
+The adapter stores retry records in one sorted set keyed by `nextRetryAt`. The key convention is:
+
+```txt
+<keyPrefix>:retry-queue:<queueName>
+```
+
+Defaults are `keyPrefix = "orbital:pulse-webhooks"` and `queueName = "default"`, so the default Redis key is `orbital:pulse-webhooks:retry-queue:default`. Use a service-specific prefix, such as `orbital:prod`, when multiple deployments share the same Redis database.
+
 ### `verifyWebhook(payload, signature, secret, timestamp)` → `NormalizedEvent | null`
 
 Verifies that `payload` was signed with `secret` using `timestamp + "." + payload`. Returns the parsed event on success, `null` on any failure (bad signature, malformed JSON, invalid timestamp, length mismatch).
@@ -165,7 +177,7 @@ Uses constant-time comparison and Web Crypto for HMAC-SHA256 verification.
 
 ## Current limitations
 
-- **Retries live in-process.** Restarting the process loses pending retries. Persistent retry queues with pluggable adapters (Redis, Postgres, S3) ship in Phase 1 — see [`ROADMAP.md`](../../ROADMAP.md#wave-13--cursor-persistence-and-replay-primitives).
+- **Delivery loop integration is still in-process.** `RedisRetryQueue` provides the durable adapter surface, but wiring persistent polling into `WebhookDelivery` is tracked separately under replay primitives.
 - **Exponential backoff is hard-coded.** Configurable strategies (linear, jittered, capped-at-N-hours) are tracked under [`webhooks`](https://github.com/determined-001/orbital_stellar/labels/webhooks).
 - **No signature versioning.** The header format is fixed at `x-orbital-signature` (HMAC-SHA256 hex) — there is no `v1=…` prefix. If the algorithm needs to change, a future `x-orbital-signature-v2` header will be introduced alongside `v1` for a deprecation window.
 

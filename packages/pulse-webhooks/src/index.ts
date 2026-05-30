@@ -3,7 +3,10 @@ import { createHmac, timingSafeEqual } from "crypto";
 
 import type { VerifyWebhookOptions, WebhookConfig } from "./types.js";
 import { DEFAULT_MAX_AGE_MS, DEFAULT_CLOCK_SKEW_MS } from "./types.js";
+export { RedisRetryQueue } from "./RedisRetryQueue.js";
 export { verifyWebhookEdge } from "./edge.js";
+export type { RedisLike, RedisRetryQueueOptions } from "./RedisRetryQueue.js";
+export type { RetryQueue, RetryRecord } from "./RetryQueue.js";
 export type { VerifyWebhookOptions, WebhookConfig } from "./types.js";
 
 type ResolvedWebhookConfig = Omit<Required<WebhookConfig>, "url"> & {
