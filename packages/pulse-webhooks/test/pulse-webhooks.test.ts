@@ -286,6 +286,38 @@ describe("pulse-webhooks verifyWebhook", () => {
     expect(event).toEqual(deliveryEvent);
   });
 
+  it("returns parsed event when explicit v1 version matches timestamped payload", () => {
+    const payload = JSON.stringify(deliveryEvent);
+    const timestamp = "1714176000000";
+    const signature = signWebhookPayload("top-secret", payload, timestamp);
+
+    const event = verifyWebhook(
+      payload,
+      signature,
+      "top-secret",
+      timestamp,
+      "v1",
+    );
+
+    expect(event).toEqual(deliveryEvent);
+  });
+
+  it("accepts v2 placeholder without changing v1 verification behavior", () => {
+    const payload = JSON.stringify(deliveryEvent);
+    const timestamp = "1714176000000";
+    const signature = signWebhookPayload("top-secret", payload, timestamp);
+
+    const event = verifyWebhook(
+      payload,
+      signature,
+      "top-secret",
+      timestamp,
+      "v2",
+    );
+
+    expect(event).toEqual(deliveryEvent);
+  });
+
   it("returns null when timestamp is missing or invalid", () => {
     const payload = JSON.stringify(deliveryEvent);
     const signature = signWebhookPayload(
@@ -328,6 +360,38 @@ describe("pulse-webhooks verifyWebhookEdge", () => {
       signature,
       "top-secret",
       timestamp,
+    );
+
+    expect(event).toEqual(deliveryEvent);
+  });
+
+  it("returns parsed event when explicit v1 version matches timestamped payload", async () => {
+    const payload = JSON.stringify(deliveryEvent);
+    const timestamp = "1714176000000";
+    const signature = signWebhookPayload("top-secret", payload, timestamp);
+
+    const event = await verifyWebhookEdge(
+      payload,
+      signature,
+      "top-secret",
+      timestamp,
+      "v1",
+    );
+
+    expect(event).toEqual(deliveryEvent);
+  });
+
+  it("accepts v2 placeholder without changing v1 verification behavior", async () => {
+    const payload = JSON.stringify(deliveryEvent);
+    const timestamp = "1714176000000";
+    const signature = signWebhookPayload("top-secret", payload, timestamp);
+
+    const event = await verifyWebhookEdge(
+      payload,
+      signature,
+      "top-secret",
+      timestamp,
+      "v2",
     );
 
     expect(event).toEqual(deliveryEvent);

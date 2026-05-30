@@ -1,9 +1,9 @@
 import type { NormalizedEvent, Watcher, WatcherNotification } from "@orbital/pulse-core";
 import { createHmac, timingSafeEqual } from "crypto";
 
-import type { WebhookConfig } from "./types.js";
+import type { VerifierSignatureVersion, WebhookConfig } from "./types.js";
 export { verifyWebhookEdge } from "./edge.js";
-export type { WebhookConfig } from "./types.js";
+export type { VerifierSignatureVersion, WebhookConfig } from "./types.js";
 
 type ResolvedWebhookConfig = Omit<Required<WebhookConfig>, "url"> & {
   urls: string[];
@@ -144,7 +144,12 @@ export function verifyWebhook(
   signature: string,
   secret: string,
   timestamp: string,
+  version: VerifierSignatureVersion = "v1",
 ): NormalizedEvent | null {
+  if (version === "v2") {
+    // Reserved for a future `x-orbital-signature-v2` format. The verification payload is unchanged until v2 lands.
+  }
+
   if (!/^\d+$/.test(timestamp)) return null;
 
   const expected = createHmac("sha256", secret)

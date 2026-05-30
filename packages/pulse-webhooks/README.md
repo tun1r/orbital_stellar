@@ -123,15 +123,19 @@ Attaches a delivery driver to a `Watcher`. Every event the watcher emits is deli
 | `config.deliveryTimeoutMs`    | `number`             | `10_000` | Abort threshold for each HTTP attempt                                                 |
 | `config.allowPrivateNetworks` | `boolean`            | `false`  | If true, bypass SSRF checks for local/private IP ranges                               |
 
-### `verifyWebhook(payload, signature, secret, timestamp)` → `NormalizedEvent | null`
+### `verifyWebhook(payload, signature, secret, timestamp, version = "v1")` → `NormalizedEvent | null`
 
 Verifies that `payload` was signed with `secret` using `timestamp + "." + payload`. Returns the parsed event on success, `null` on any failure (bad signature, malformed JSON, invalid timestamp, length mismatch).
 
+The optional `version` parameter is a negotiation hook for future signature header formats. Today `"v1"` preserves the current `x-orbital-signature` behavior, and `"v2"` is a documented placeholder reserved for a future `x-orbital-signature-v2` implementation.
+
 Uses `crypto.timingSafeEqual` under the hood — do not roll your own comparison.
 
-### `verifyWebhookEdge(payload, signature, secret, timestamp)` → `Promise<NormalizedEvent | null>`
+### `verifyWebhookEdge(payload, signature, secret, timestamp, version = "v1")` → `Promise<NormalizedEvent | null>`
 
 Edge-compatible version of `verifyWebhook` using Web Crypto API. Works in Cloudflare Workers, Deno, and browsers. Returns a Promise that resolves to the parsed event on success, `null` on any failure.
+
+The optional `version` parameter is a negotiation hook for future signature header formats. Current behavior remains `"v1"`, while `"v2"` is reserved as a documented placeholder until the new header format is implemented.
 
 Uses constant-time comparison and Web Crypto for HMAC-SHA256 verification.
 
