@@ -1,6 +1,7 @@
 import type { NormalizedEvent } from "@orbital/pulse-core";
 
-import type { VerifierSignatureVersion } from "./types.js";
+import type { VerifyWebhookOptions } from "./types.js";
+import { DEFAULT_MAX_AGE_MS, DEFAULT_CLOCK_SKEW_MS } from "./types.js";
 
 /**
  * Verifies webhook signatures using Web Crypto API (compatible with Cloudflare Workers, Deno, and browsers)
@@ -9,7 +10,7 @@ import type { VerifierSignatureVersion } from "./types.js";
  * @param signature - The x-orbital-signature header value
  * @param secret - Your webhook secret
  * @param timestamp - The x-orbital-timestamp header value
- * @param version - Signature version selector. `v2` is reserved for a future `x-orbital-signature-v2` format.
+ * @param options - Optional replay-window options (`maxAgeMs`, `clockSkewMs`, `nowMs`)
  * @returns Parsed NormalizedEvent if verification succeeds, null otherwise
  */
 export async function verifyWebhookEdge(
@@ -17,14 +18,20 @@ export async function verifyWebhookEdge(
   signature: string,
   secret: string,
   timestamp: string,
-  version: VerifierSignatureVersion = "v1",
+  options: VerifyWebhookOptions = {},
 ): Promise<NormalizedEvent | null> {
-  if (version === "v2") {
-    // Reserved for a future `x-orbital-signature-v2` format. The verification payload is unchanged until v2 lands.
-  }
-
   // Validate timestamp format
   if (!/^\d+$/.test(timestamp)) return null;
+
+  const timestampMs = Number(timestamp);
+  if (!Number.isFinite(timestampMs)) return null;
+
+  const maxAgeMs = options.maxAgeMs ?? DEFAULT_MAX_AGE_MS;
+  const clockSkewMs = options.clockSkewMs ?? DEFAULT_CLOCK_SKEW_MS;
+  const nowMs = options.nowMs ?? Date.now();
+
+  if (timestampMs > nowMs + clockSkewMs) return null;
+  if (timestampMs < nowMs - maxAgeMs - clockSkewMs) return null;
 
   try {
     // Import the secret key
